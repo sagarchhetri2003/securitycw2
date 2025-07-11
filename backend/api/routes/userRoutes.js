@@ -4,8 +4,8 @@ const userController = require('../controllers/userControllers');
 const { verifyUser, verifyAuthorization } = require("../middlewares/authMiddlerware");
 const { verifyOtp } = require('../controllers/userControllers');
 
-router.post('/login', userController.login)
 
+router.post("/login", userController.loginLimiter, userController.login)
 router.post('/register', userController.register)
 router.post('/verify-otp', verifyOtp);
 router.get('/all', verifyUser, verifyAuthorization, userController.allUser)

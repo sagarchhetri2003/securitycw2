@@ -3,6 +3,9 @@ const Joi = require("joi");
 const User = require("../models/User");
 const httpStatus = require("http-status");
 const jwt = require("jsonwebtoken");
+const axios = require("axios"); // For CAPTCHA verification
+const levenshtein = require('fast-levenshtein');
+const rateLimit = require('express-rate-limit');
 const nodemailer = require("nodemailer");
 const bcrypt = require('bcryptjs');
 const upload = require("../middlewares/uploads");
@@ -11,6 +14,41 @@ const validatePassword = require('../utils/validatePassword');
 require("dotenv").config();
 const WelcomeEmail = require("../templates/welcomeemail");
 const ResetPasswordEmail = require("../templates/resetpasswordemail");
+const { passwordExpiredEmail, accountLockedEmail } = require("../templates/securityAlerts");
+
+const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // limit 5 login attempts per email
+  keyGenerator: (req) => req.body.email || req.ip,
+  skipSuccessfulRequests: false,
+  handler: async (req, res) => {
+    const email = req.body.email;
+    if (email) {
+      const user = await User.findOne({ email });
+      if (user) {
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: "Account Locked - Too Many Login Attempts",
+          html: accountLockedEmail(user),
+        });
+      }
+    }
+
+    return res.status(429).json({
+      success: false,
+      msg: "Too many login attempts. Your account has been locked for 10 minutes.",
+    });
+  },
+});
 
 // Validation schemas
 const userValidationSchema = Joi.object({
@@ -19,11 +57,13 @@ const userValidationSchema = Joi.object({
   password: Joi.string().required(),
   mobile_no: Joi.string().required(),
 });
-
 const loginValidationSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().required()
+  password: Joi.string().required(),
+  captchaToken: Joi.string().required()
 });
+
+
 
 // Create cart function
 const createCart = async (user) => {
@@ -38,7 +78,7 @@ const createCart = async (user) => {
   }
 };
 
-// Register
+// Register with OTP
 const register = async (req, res) => {
   try {
     const { error } = userValidationSchema.validate(req.body);
@@ -98,9 +138,22 @@ const verifyOtp = async (req, res) => {
   try {
     const user = await User.findOne({ email });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (user.otp !== otp) return res.status(400).json({ message: "Invalid OTP" });
-    if (user.otpExpiry < new Date()) return res.status(400).json({ message: "OTP expired" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.otp || !user.otpExpiry) {
+      return res.status(400).json({ message: "No OTP request found" });
+    }
+
+    const now = new Date();
+    if (user.otpExpiry < now) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    if (user.otp !== otp.toString()) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
 
     user.isVerified = true;
     user.otp = null;
@@ -110,8 +163,16 @@ const verifyOtp = async (req, res) => {
     return res.status(200).json({ message: "Email verified successfully" });
 
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error("OTP Verification Error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
+};
+
+const verifyCaptcha = async (token) => {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`;
+  const res = await axios.post(url);
+  return res.data.success;
 };
 
 // Login
@@ -120,37 +181,73 @@ const login = async (req, res) => {
     const { error } = loginValidationSchema.validate(req.body);
     if (error) return res.status(httpStatus.BAD_REQUEST).json({ success: false, msg: error.message });
 
-    const user = await User.findOne({ email: req.body.email });
+    const { email, password, captchaToken } = req.body;
+
+    // ✅ CAPTCHA check
+    const isCaptchaValid = await verifyCaptcha(captchaToken);
+    if (!isCaptchaValid) {
+      return res.status(403).json({ success: false, msg: "CAPTCHA verification failed. Please try again." });
+    }
+    const user = await User.findOne({ email });
     if (!user) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "User Not Registered!!" });
+
     if (!user.isVerified) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Please verify your email." });
 
-    // Check password expiry
-    const ninetyDays = 1000 * 60 * 60 * 24 * 90;
-    if (Date.now() - new Date(user.passwordChangedAt).getTime() > ninetyDays) {
-      return res.status(403).json({ success: false, msg: "Password expired. Please reset your password." });
+
+    // ✅ Password expiry check
+    const thirtyDays = 1000 * 60 * 60 * 24 * 30;
+    const passwordExpired = Date.now() - new Date(user.passwordChangedAt).getTime() > thirtyDays;
+
+    if (passwordExpired) {
+      const resetToken = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const resetLink = `${process.env.CLIENT_URL || "http://localhost:3001"}/reset-password?token=${resetToken}`;
+
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+      });
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: user.email,
+        subject: "Password Expired - Reset Required",
+        html: passwordExpiredEmail(user, resetLink)
+      });
+
+      return res.status(403).json({ success: false, msg: "Password expired. Reset link sent to your email." });
     }
 
-    // Check lockUntil
-    if (user.lockUntil && user.lockUntil > Date.now()) {
-      return res.status(403).json({ success: false, msg: 'Account locked. Try again later.' });
-    }
+ 
+    // const match = await bcrypt.compare(password, user.password);
+    // if (!match) {
+    //   user.loginAttempts = (user.loginAttempts || 0) + 1;
 
-    const match = await bcrypt.compare(req.body.password, user.password);
-    if (!match) {
-      user.loginAttempts = (user.loginAttempts || 0) + 1;
-      if (user.loginAttempts >= 3) {
-        user.lockUntil = new Date(Date.now() + 10 * 60 * 1000);
-      }
-      await user.save();
-      return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Email or Password Incorrect!!" });
-    }
+    //   if (user.loginAttempts >= 3) {
+    //     user.lockUntil = new Date(Date.now() + 10 * 60 * 1000);
 
-    user.loginAttempts = 0;
-    user.lockUntil = null;
-    await user.save();
+    //     const transporter = nodemailer.createTransport({
+    //       service: "gmail",
+    //       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    //     });
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    const { password, otp, otpExpiry, __v, ...data } = user.toObject();
+    //     await transporter.sendMail({
+    //       from: process.env.EMAIL_USER,
+    //       to: user.email,
+    //       subject: "Account Locked - Too Many Login Attempts",
+    //       html: accountLockedEmail(user)
+    //     });
+    //   }
+
+    //   await user.save();
+    //   return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Email or Password Incorrect!!" });
+    // }
+
+
+    // ✅ Reset login attempts
+   
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const { password: _, otp, otpExpiry, __v, ...data } = user.toObject();
     await createCart(user);
 
     res.status(httpStatus.OK).json({ success: true, msg: "Login Success!!", data: { ...data, token } });
@@ -158,6 +255,8 @@ const login = async (req, res) => {
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: err.message });
   }
 };
+
+
 
 // All users (with pagination and search)
 const allUser = async (req, res) => {
@@ -241,7 +340,7 @@ const resetPasswordRequest = async (req, res) => {
   }
 };
 
-// Reset password
+/// Reset password
 const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -254,6 +353,12 @@ const resetPassword = async (req, res) => {
       if (await bcrypt.compare(newPassword, old)) {
         return res.status(400).json({ message: "You can't reuse your last 2 passwords." });
       }
+    }
+
+    // Optional: compare Levenshtein distance from current password (if stored in session/plain)
+    const distance = levenshtein.get(newPassword, user.lastPlainPassword || "");
+    if (user.lastPlainPassword && distance < 3) {
+      return res.status(400).json({ message: "New password is too similar to previous password." });
     }
 
     const hashed = await bcrypt.hash(newPassword, 10);
@@ -271,7 +376,6 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
 
 // Change password
 const changePassword = async (req, res) => {
@@ -293,6 +397,12 @@ const changePassword = async (req, res) => {
       }
     }
 
+    // ✅ Levenshtein distance check
+    const distance = levenshtein.get(newpassword, oldpassword);
+    if (distance < 3) {
+      return res.status(400).json({ msg: "New password is too similar to the old password" });
+    }
+
     // ✅ Hash and update
     const hashed = await bcrypt.hash(newpassword, 10);
     user.password = hashed;
@@ -311,7 +421,6 @@ const changePassword = async (req, res) => {
   }
 };
 
-
 // Delete user
 const deleteUser = async (req, res) => {
   try {
@@ -328,6 +437,7 @@ module.exports = {
   register,
   verifyOtp,
   login,
+  loginLimiter,
   createCart,
   allUser,
   myProfile,

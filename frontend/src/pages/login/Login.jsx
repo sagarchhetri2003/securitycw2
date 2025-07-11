@@ -8,6 +8,12 @@
 // import toast from "react-hot-toast";
 // import { AuthContext } from "../../context/authContext";
 // import Header from "../../components/Header";
+// import ReCAPTCHA from "react-google-recaptcha";
+
+// <ReCAPTCHA
+//   sitekey="6Lc5bn8rAAAAABBe1IExnfNqladP3HqX462RKCiw"
+//   onChange={(value) => setCaptchaToken(value)}
+// />
 
 // function Login() {
 //   const navigate = useNavigate();
@@ -108,7 +114,7 @@
 //                         <Field
 //                           id="loggingPassword"
 //                           name="password"
-//                           type={showPassword ? "text" : "password"} // ✅ Fixes password visibility toggle
+//                           type={showPassword ? "text" : "password"} 
 //                           className="block w-full px-4 py-2 text-gray-700 bg-white border rounded-lg dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring focus:ring-blue-300"
 //                           placeholder="Enter your password"
 //                         />
@@ -141,6 +147,21 @@
 //                         Sign In
 //                       </button>
 //                     </div>
+
+//                     {/* Sign Up Link */}
+//                     <div className="mt-4 text-center">
+//                       <p className="text-gray-600 dark:text-gray-300 text-sm">
+//                         Don't have an account?{" "}
+//                         <button
+//                           type="button"
+//                           onClick={() => navigate("/signup")}
+//                           className="text-blue-500 hover:underline"
+//                         >
+//                           Sign Up
+//                         </button>
+//                       </p>
+//                     </div>
+
 //                   </Form>
 //                 )}
 //               </Formik>
@@ -163,15 +184,24 @@ import { Field, Form, Formik } from "formik";
 import toast from "react-hot-toast";
 import { AuthContext } from "../../context/authContext";
 import Header from "../../components/Header";
+import ReCAPTCHA from "react-google-recaptcha";
 
 function Login() {
   const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated, setUserDetails } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const handleFormSubmit = async (values) => {
+    if (!captchaToken) {
+      toast.error("Please complete the CAPTCHA before logging in.");
+      return;
+    }
     try {
-      const response = await axios.post("users/login", values);
+      const response = await axios.post("users/login", {
+        ...values,
+        captchaToken,
+      });
       if (response.data.success) {
         localStorage.setItem("_hw_userDetails", JSON.stringify(response.data.data));
         localStorage.setItem("_hw_token", response.data.data.token);
@@ -206,7 +236,6 @@ function Login() {
       <Header />
       <div className="flex flex-col min-h-screen pt-20">
         <div className="flex flex-grow">
-          {/* Left Side - Full Screen Image */}
           <div
             className="w-full lg:w-1/2 bg-cover bg-center"
             style={{
@@ -215,7 +244,6 @@ function Login() {
             }}
           ></div>
 
-          {/* Right Side - Login Form */}
           <div className="w-full lg:w-1/2 flex items-center justify-center bg-white dark:bg-gray-800">
             <div className="w-full max-w-md px-6 py-8">
               <div className="flex justify-center">
@@ -238,10 +266,7 @@ function Login() {
                 {(props) => (
                   <Form>
                     <div className="mt-4">
-                      <label
-                        className="block mb-2 text-sm font-medium text-gray-600 dark:text-gray-200"
-                        htmlFor="LoggingEmailAddress"
-                      >
+                      <label className="block mb-2 text-sm font-medium text-gray-600 dark:text-gray-200" htmlFor="LoggingEmailAddress">
                         Email Address
                       </label>
                       <Field
@@ -252,18 +277,16 @@ function Login() {
                         placeholder="Enter your email"
                       />
                     </div>
+
                     <div className="mt-4">
-                      <label
-                        className="block mb-2 text-sm font-medium text-gray-600 dark:text-gray-200"
-                        htmlFor="loggingPassword"
-                      >
+                      <label className="block mb-2 text-sm font-medium text-gray-600 dark:text-gray-200" htmlFor="loggingPassword">
                         Password
                       </label>
                       <div className="relative">
                         <Field
                           id="loggingPassword"
                           name="password"
-                          type={showPassword ? "text" : "password"} 
+                          type={showPassword ? "text" : "password"}
                           className="block w-full px-4 py-2 text-gray-700 bg-white border rounded-lg dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring focus:ring-blue-300"
                           placeholder="Enter your password"
                         />
@@ -277,7 +300,13 @@ function Login() {
                       </div>
                     </div>
 
-                    {/* Forgot Password Link */}
+                    <div className="mt-4">
+                      <ReCAPTCHA
+                        sitekey="6Lc5bn8rAAAAABBe1IExnfNqladP3HqX462RKCiw"
+                        onChange={(value) => setCaptchaToken(value)}
+                      />
+                    </div>
+
                     <div className="mt-2 text-right">
                       <button
                         type="button"
@@ -290,17 +319,16 @@ function Login() {
 
                     <div className="mt-6">
                       <button
-                        type="submit"
+                        type="submit"disabled={!captchaToken}
                         className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring focus:ring-gray-300 focus:ring-opacity-50"
                       >
                         Sign In
                       </button>
                     </div>
 
-                    {/* Sign Up Link */}
                     <div className="mt-4 text-center">
                       <p className="text-gray-600 dark:text-gray-300 text-sm">
-                        Don't have an account?{" "}
+                        Don't have an account? {" "}
                         <button
                           type="button"
                           onClick={() => navigate("/signup")}
@@ -310,7 +338,6 @@ function Login() {
                         </button>
                       </p>
                     </div>
-
                   </Form>
                 )}
               </Formik>
