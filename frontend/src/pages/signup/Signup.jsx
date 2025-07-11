@@ -227,29 +227,37 @@ function Signup() {
     if (/[a-z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[@$!%*?&]/.test(password)) score++;
-
+  
     if (score <= 2) return 'Weak';
     if (score === 3 || score === 4) return 'Moderate';
     return 'Strong';
   };
+  
+  const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
 
-  const validationSchema = yup.object({
-    name: yup.string().required('This field is required'),
-    email: yup.string().required('This field is required').email('Invalid email format'),
-    mobile_no: yup.string().required('Phone number is required').matches(/^[9]\d{9}$/, 'Invalid phone number'),
-    password: yup
-      .string()
-      .required('Password is required')
-      .min(8, 'Minimum 8 characters')
-      .matches(/[A-Z]/, 'At least one uppercase letter')
-      .matches(/[a-z]/, 'At least one lowercase letter')
-      .matches(/[0-9]/, 'At least one number')
-      .matches(/[@$!%*?&]/, 'At least one special character'),
-    confirmpassword: yup
-      .string()
-      .required('Please confirm your password')
-      .oneOf([yup.ref('password')], 'Passwords must match'),
-  });
+const validationSchema = yup.object({
+  name: yup.string().required('This field is required'),
+  email: yup
+    .string()
+    .required('This field is required')
+    .email('Invalid email format'),
+  mobile_no: yup
+    .string()
+    .required('Phone number is required')
+    .matches(/^[9]\d{9}$/, 'Invalid phone number (must start with 9 and be 10 digits)'),
+  password: yup
+    .string()
+    .required('Password is required')
+    .matches(strongRegex, {
+      message:
+        'Password must include uppercase, lowercase, number, symbol & be 8+ characters',
+    }),
+  confirmpassword: yup
+    .string()
+    .required('Please confirm your password')
+    .oneOf([yup.ref('password')], 'Passwords must match'),
+});
+
 
   const handleFormSubmit = async (values, { resetForm }) => {
     try {
