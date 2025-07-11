@@ -56,19 +56,37 @@
 
 
 
-const propertyController = require("../controllers/propertyControllers");  // Updated to propertyController
-const { verifyUser, verifyAuthorization } = require("../middlewares/authMiddlerware");
+// const propertyController = require("../controllers/propertyControllers");  // Updated to propertyController
+// const { verifyUser, verifyAuthorization } = require("../middlewares/authMiddlerware");
 
+// const router = require("express").Router();
+
+// router.post('/add', verifyUser, verifyAuthorization, propertyController.addProperty);  // Updated to addProperty
+
+// router.get('/all', propertyController.getProperties);  // Updated to getProperties
+
+// router.get('/:sku', propertyController.getProperty);  // Updated to getProperty
+
+// router.put('/:id', verifyUser, verifyAuthorization, propertyController.updateProperty);  // Updated to updateProperty
+
+// router.delete('/:id', verifyUser, verifyAuthorization, propertyController.deleteProperty);  // Updated to deleteProperty
+ 
+// module.exports = router;
+
+
+const propertyController = require("../controllers/propertyControllers");
+const { verifyUser, verifyAuthorization } = require("../middlewares/authMiddlerware");
 const router = require("express").Router();
 
-router.post('/add', verifyUser, verifyAuthorization, propertyController.addProperty);  // Updated to addProperty
+// 🔐 Only admin or super-admin can add, update, delete
+router.post('/add', verifyUser, verifyAuthorization('admin', 'super-admin'), propertyController.addProperty);
 
-router.get('/all', propertyController.getProperties);  // Updated to getProperties
+router.get('/all', propertyController.getProperties);  // Public or accessible to all
 
-router.get('/:sku', propertyController.getProperty);  // Updated to getProperty
+router.get('/:sku', propertyController.getProperty);   // Public or based on role (if needed)
 
-router.put('/:id', verifyUser, verifyAuthorization, propertyController.updateProperty);  // Updated to updateProperty
+router.put('/:id', verifyUser, verifyAuthorization('admin', 'super-admin'), propertyController.updateProperty);
 
-router.delete('/:id', verifyUser, verifyAuthorization, propertyController.deleteProperty);  // Updated to deleteProperty
- 
+router.delete('/:id', verifyUser, verifyAuthorization('admin', 'super-admin'), propertyController.deleteProperty);
+
 module.exports = router;
