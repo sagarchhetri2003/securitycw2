@@ -1,20 +1,21 @@
 // Required modules
 const Joi = require("joi");
-const User = require("../models/User");
-const httpStatus = require("http-status");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const axios = require("axios"); // For CAPTCHA verification
-const levenshtein = require('fast-levenshtein');
-const rateLimit = require('express-rate-limit');
+const httpStatus = require("http-status");
 const nodemailer = require("nodemailer");
-const bcrypt = require('bcryptjs');
-const upload = require("../middlewares/uploads");
+const axios = require("axios");
+const levenshtein = require("fast-levenshtein");
+const rateLimit = require("express-rate-limit");
+const User = require("../models/User");
 const Cart = require("../models/Carts");
-const validatePassword = require('../utils/validatePassword');
-require("dotenv").config();
+const upload = require("../middlewares/uploads");
+const validatePassword = require("../utils/validatePassword");
 const WelcomeEmail = require("../templates/welcomeemail");
 const ResetPasswordEmail = require("../templates/resetpasswordemail");
 const { passwordExpiredEmail, accountLockedEmail } = require("../templates/securityAlerts");
+require("dotenv").config();
+
 
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
@@ -174,31 +175,33 @@ const verifyCaptcha = async (token) => {
   const res = await axios.post(url);
   return res.data.success;
 };
-
-// Login
 const login = async (req, res) => {
   try {
+    // ✅ Step 1: Validate request body
     const { error } = loginValidationSchema.validate(req.body);
     if (error) return res.status(httpStatus.BAD_REQUEST).json({ success: false, msg: error.message });
 
     const { email, password, captchaToken } = req.body;
 
-    // ✅ CAPTCHA check
+    // ✅ Step 2: Verify CAPTCHA token
     const isCaptchaValid = await verifyCaptcha(captchaToken);
     if (!isCaptchaValid) {
       return res.status(403).json({ success: false, msg: "CAPTCHA verification failed. Please try again." });
     }
+
+    // ✅ Step 3: Check if user exists
     const user = await User.findOne({ email });
     if (!user) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "User Not Registered!!" });
 
+    // ✅ Step 4: Check if email is verified
     if (!user.isVerified) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Please verify your email." });
 
-
-    // ✅ Password expiry check
+    // ✅ Step 5: Check for password expiry (e.g., 30 days)
     const thirtyDays = 1000 * 60 * 60 * 24 * 30;
     const passwordExpired = Date.now() - new Date(user.passwordChangedAt).getTime() > thirtyDays;
 
     if (passwordExpired) {
+      // Send reset email if password is expired
       const resetToken = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
       const resetLink = `${process.env.CLIENT_URL || "http://localhost:3001"}/reset-password?token=${resetToken}`;
 
@@ -216,61 +219,99 @@ const login = async (req, res) => {
 
       return res.status(403).json({ success: false, msg: "Password expired. Reset link sent to your email." });
     }
-  
 
+    // ✅ Step 6: Regenerate session to prevent session fixation
+    req.session.regenerate(async (err) => {
+      if (err) {
+        return res.status(500).json({ success: false, msg: "Session error" });
+      }
 
+      // ✅ Step 7: Store user ID in session (for session-based access)
+      req.session.userId = user._id;
 
-    // const match = await bcrypt.compare(password, user.password);
-    // if (!match) {
-    //   user.loginAttempts = (user.loginAttempts || 0) + 1;
-
-    //   if (user.loginAttempts >= 3) {
-    //     user.lockUntil = new Date(Date.now() + 10 * 60 * 1000);
-
-    //     const transporter = nodemailer.createTransport({
-    //       service: "gmail",
-    //       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-    //     });
-
-    //     await transporter.sendMail({
-    //       from: process.env.EMAIL_USER,
-    //       to: user.email,
-    //       subject: "Account Locked - Too Many Login Attempts",
-    //       html: accountLockedEmail(user)
-    //     });
-    //   }
-
-    //   await user.save();
-    //   return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Email or Password Incorrect!!" });
-    // }
-
-
-    // ✅ Reset login attempts
-
-
-    //     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    //     const { password: _, otp, otpExpiry, __v, ...data } = user.toObject();
-    //     await createCart(user);
-
-    //     res.status(httpStatus.OK).json({ success: true, msg: "Login Success!!", data: { ...data, token } });
-    //   } catch (err) {
-    //     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: err.message });
-    //   }
-    // };
+      // ✅ Step 8: Also issue JWT token (for frontend auth/token-based API use)
       const token = jwt.sign(
-        { userId: user._id, role: user.role }, // <-- include role
+        { userId: user._id, role: user.role },
         process.env.JWT_SECRET,
         { expiresIn: "7d" }
       );
-  
+
+      // ✅ Step 9: Clean up user object before sending
       const { password: _, otp, otpExpiry, __v, ...data } = user.toObject();
+
+      // ✅ Step 10: Create a cart for user if doesn't exist
       await createCart(user);
+
+      // ✅ Step 11: Send both session + JWT to client
+      res.status(httpStatus.OK).json({
+        success: true,
+        msg: "Login Success!!",
+        data: { ...data, token }
+      });
+    });
+
+  } catch (err) {
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: err.message });
+  }
+};
+
+
+// Login
+// const login = async (req, res) => {
+//   try {
+//     const { error } = loginValidationSchema.validate(req.body);
+//     if (error) return res.status(httpStatus.BAD_REQUEST).json({ success: false, msg: error.message });
+
+//     const { email, password, captchaToken } = req.body;
+
+//     // ✅ CAPTCHA check
+//     const isCaptchaValid = await verifyCaptcha(captchaToken);
+//     if (!isCaptchaValid) {
+//       return res.status(403).json({ success: false, msg: "CAPTCHA verification failed. Please try again." });
+//     }
+//     const user = await User.findOne({ email });
+//     if (!user) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "User Not Registered!!" });
+
+//     if (!user.isVerified) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Please verify your email." });
+
+
+//     // ✅ Password expiry check
+//     const thirtyDays = 1000 * 60 * 60 * 24 * 30;
+//     const passwordExpired = Date.now() - new Date(user.passwordChangedAt).getTime() > thirtyDays;
+
+//     if (passwordExpired) {
+//       const resetToken = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+//       const resetLink = `${process.env.CLIENT_URL || "http://localhost:3001"}/reset-password?token=${resetToken}`;
+
+//       const transporter = nodemailer.createTransport({
+//         service: "gmail",
+//         auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+//       });
+
+//       await transporter.sendMail({
+//         from: process.env.EMAIL_USER,
+//         to: user.email,
+//         subject: "Password Expired - Reset Required",
+//         html: passwordExpiredEmail(user, resetLink)
+//       });
+
+//       return res.status(403).json({ success: false, msg: "Password expired. Reset link sent to your email." });
+//     }
   
-      res.status(httpStatus.OK).json({ success: true, msg: "Login Success!!", data: { ...data, token } });
-      } catch (err) {
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: err.message });
-      }
-    }; // <-- Closing brace for login function added
+//       const token = jwt.sign(
+//         { userId: user._id, role: user.role }, // <-- include role
+//         process.env.JWT_SECRET,
+//         { expiresIn: "7d" }
+//       );
+  
+//       const { password: _, otp, otpExpiry, __v, ...data } = user.toObject();
+//       await createCart(user);
+  
+//       res.status(httpStatus.OK).json({ success: true, msg: "Login Success!!", data: { ...data, token } });
+//       } catch (err) {
+//         res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: err.message });
+//       }
+//     }; // <-- Closing brace for login function added
   
       // All users (with pagination and search)
       const allUser = async (req, res) => {
@@ -445,21 +486,42 @@ const login = async (req, res) => {
         res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, message: err.message });
       }
     };
+    const logout = (req, res) => {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("❌ Session destroy error:", err);
+          return res.status(500).json({ success: false, msg: "Logout failed" });
+        }
+    
+        console.log("🧼 Session destroyed. Clearing cookie...");
+        // ✅ Clear session cookie
+        res.clearCookie("connect.sid", {
+          path: "/",             // must match cookie path
+          httpOnly: true,        // match cookie settings
+          sameSite: "Strict",    // match SameSite setting
+          secure: process.env.NODE_ENV === "production"       // or true if using HTTPS
+        });
+    
+        return res.status(200).json({ success: true, msg: "Logout successful" });
+      });
+    };
+    
+    
 
     // Export all
     module.exports = {
+      login,
       register,
       verifyOtp,
-      login,
-      loginLimiter,
-      createCart,
       allUser,
       myProfile,
       updateProfile,
       uploadPP,
+      changePassword,
       resetPasswordRequest,
       resetPassword,
-      changePassword,
       deleteUser,
+      loginLimiter,
+      logout, // if using rate limiter
     };
     // End of userControllers.js

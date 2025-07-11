@@ -90,15 +90,39 @@ const Header = () => {
     const handelNotification = () => {
         if (notificationModal) setNotificationModal(false);
     };
+    const logout = async () => {
+        try {
+          // 🔒 Backend logout
+          await axios.post("http://localhost:8000/users/logout", {}, {
+            withCredentials: true,
+          });
+      
+          // 🧹 Clear frontend
+          localStorage.removeItem("_hw_token");
+          localStorage.removeItem("_hw_userDetails");
+      
+          toast.success("Logout successful");
+      
+          setTimeout(() => {
+            window.location.href = "/signup";
+          }, 400);
+        } catch (err) {
+          console.error("Logout error:", err);
+          toast.error("Logout failed. Please try again.");
+        }
+      };
+      
 
-    const logout = () => {
-        localStorage.removeItem("_hw_token");
-        localStorage.removeItem("_hw_userDetails");
 
-        setTimeout(() => {
-            window.location.href = "/signup"
-        }, 400)
-    };
+
+    // const logout = () => {
+    //     localStorage.removeItem("_hw_token");
+    //     localStorage.removeItem("_hw_userDetails");
+
+    //     setTimeout(() => {
+    //         window.location.href = "/signup"
+    //     }, 400)
+    // };
 
 
     // console.log("authUSer", authUser);
