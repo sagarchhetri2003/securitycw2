@@ -3,22 +3,25 @@
 
 // import { Link, useNavigate } from 'react-router-dom';
 // import axios from '../../axios';
-// import React from 'react';
+// import React, { useState } from 'react';
 // import { Field, Form, Formik } from 'formik';
 // import * as yup from 'yup';
 // import FieldError from '../../components/FieldError';
 // import toast from 'react-hot-toast';
 // import Header from '../../components/Header';
+// import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 // function Signup() {
 //   const navigate = useNavigate();
+//   const [showPassword, setShowPassword] = useState(false);
+//   const [showConfirm, setShowConfirm] = useState(false);
 
 //   const validationSchema = yup.object({
-//     name: yup.string().required('This Field is required'),
+//     name: yup.string().required('This field is required'),
 //     email: yup
 //       .string()
-//       .required('This Field is required')
-//       .email('Invalid email'),
+//       .required('This field is required')
+//       .email('Invalid email format'),
 //     mobile_no: yup
 //       .string()
 //       .required('Phone number is required')
@@ -26,64 +29,75 @@
 //     password: yup
 //       .string()
 //       .required('Password is required')
-//       .min(5, 'Your password is too short.')
-//       .matches(/[a-zA-Z]/, 'Password can only contain Latin letters.'),
+//       .min(8, 'Minimum 8 characters')
+//       .matches(/[A-Z]/, 'At least one uppercase letter')
+//       .matches(/[a-z]/, 'At least one lowercase letter')
+//       .matches(/[0-9]/, 'At least one number')
+//       .matches(/[@$!%*?&]/, 'At least one special character'),
 //     confirmpassword: yup
 //       .string()
-//       .required('Confirm Your Password')
+//       .required('Please confirm your password')
 //       .oneOf([yup.ref('password')], 'Passwords must match'),
 //   });
 
-//   const handleFormSubmit = async (values) => {
-//     try {
-//       const data = { ...values };
-//       delete data.confirmpassword; // remove the confirm password before sending
-//       const response = await axios.post('/users/register', data);
-//       if (response.data.success) {
-//         toast.success('Registration Successful');
-//         setTimeout(() => navigate('/login'), 100);
-//       }
-//     } catch (error) {
-//       console.error('Error submitting form:', error);
-//       toast.error(error.response?.data?.msg || 'Something went wrong');
+
+
+
+// const handleFormSubmit = async (values, { resetForm }) => {
+//   try {
+//     const data = {
+//       name: values.name.trim(),
+//       email: values.email.trim(),
+//       mobile_no: values.mobile_no.trim(),
+//       password: values.password,
+//     };
+
+//     const response = await axios.post('/users/register', data);
+
+//     if (response.data.success) {
+//       toast.success('Registration successful. OTP sent to email.');
+//       resetForm();
+//       navigate('/verify-otp', { state: { email: data.email } }); // ✅ go to OTP page
 //     }
-//   };
+
+//   } catch (error) {
+//     console.error('Signup error:', error);
+//     toast.error(error.response?.data?.msg || 'Registration failed');
+//   }
+// };
+
 
 //   return (
 //     <div className="min-h-screen flex flex-col">
-//       {/* Header at the top */}
 //       <Header />
 
-//       {/* Main content area: left image + right form */}
 //       <div className="flex flex-grow">
-//         {/* Left side with image */}
 //         <div
 //           className="hidden lg:block w-1/2 bg-cover bg-center"
 //           style={{
 //             backgroundImage:
-//               "url('https://images.unsplash.com/photo-1606660265514-358ebbadc80d?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1575&q=80')",
+//               "url('https://images.unsplash.com/photo-1606660265514-358ebbadc80d?auto=format&fit=crop&w=1575&q=80')",
 //           }}
 //         />
 
-//         {/* Right side with signup form */}
-//         <div className="w-full lg:w-1/2 flex items-center justify-center bg-white dark:bg-gray-900 px-6 py-10">
+//         <div className="w-full lg:w-1/2 flex items-center justify-center bg-white dark:bg-gray-800 px-6 py-10">
 //           <div className="w-full max-w-md">
-//             {/* Logo */}
-//             <div className="flex justify-center">
-//               <img className="w-auto h-8" src="logo.png" alt="Logo" />
+//             <div className="flex justify-center mb-4">
+//               <img className="w-auto h-20" src="logo.png" alt="Logo" />
 //             </div>
 
-//             {/* Sign In / Sign Up Tabs */}
-//             <div className="flex items-center justify-center mt-6">
-//               <Link to="/login" className="w-1/3 pb-4 text-center text-gray-500 border-b">
+//             <div className="flex items-center justify-center">
+//               <Link
+//                 to="/login"
+//                 className="w-1/3 pb-4 text-center text-gray-500 border-b"
+//               >
 //                 Sign In
 //               </Link>
-//               <span className="w-1/3 pb-4 text-center text-gray-800 dark:text-gray-200 border-b-2 border-blue-500">
+//               <span className="w-1/3 pb-4 text-center text-gray-800 border-b-2 border-blue-500">
 //                 Sign Up
 //               </span>
 //             </div>
 
-//             {/* Formik Form */}
 //             <Formik
 //               initialValues={{
 //                 name: '',
@@ -127,29 +141,45 @@
 //                     <FieldError message={touched.email && errors.email} />
 //                   </div>
 
-//                   <div>
+//                   {/* Password field with eye toggle */}
+//                   <div className="relative">
 //                     <Field
 //                       name="password"
-//                       type="password"
+//                       type={showPassword ? 'text' : 'password'}
 //                       placeholder="Password"
-//                       className="w-full px-4 py-3 border rounded-lg"
+//                       className="w-full px-4 py-3 border rounded-lg pr-12"
 //                     />
+//                     <div
+//                       className="absolute top-1/2 right-3 transform -translate-y-1/2 cursor-pointer"
+//                       onClick={() => setShowPassword(!showPassword)}
+//                     >
+//                       {showPassword ? <FiEyeOff /> : <FiEye />}
+//                     </div>
 //                     <FieldError message={touched.password && errors.password} />
 //                   </div>
 
-//                   <div>
+//                   {/* Confirm Password field with eye toggle */}
+//                   <div className="relative">
 //                     <Field
 //                       name="confirmpassword"
-//                       type="password"
+//                       type={showConfirm ? 'text' : 'password'}
 //                       placeholder="Confirm Password"
-//                       className="w-full px-4 py-3 border rounded-lg"
+//                       className="w-full px-4 py-3 border rounded-lg pr-12"
 //                     />
-//                     <FieldError message={touched.confirmpassword && errors.confirmpassword} />
+//                     <div
+//                       className="absolute top-1/2 right-3 transform -translate-y-1/2 cursor-pointer"
+//                       onClick={() => setShowConfirm(!showConfirm)}
+//                     >
+//                       {showConfirm ? <FiEyeOff /> : <FiEye />}
+//                     </div>
+//                     <FieldError
+//                       message={touched.confirmpassword && errors.confirmpassword}
+//                     />
 //                   </div>
 
 //                   <button
 //                     type="submit"
-//                     className="w-full px-6 py-3 text-white bg-blue-500 rounded-lg hover:bg-blue-400"
+//                     className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize bg-gray-800 rounded-lg hover:bg-gray-700"
 //                   >
 //                     Sign Up
 //                   </button>
@@ -157,10 +187,12 @@
 //               )}
 //             </Formik>
 
-//             {/* Already have an account? */}
 //             <div className="mt-6 text-center">
-//               <Link to="/login" className="text-sm text-blue-500 hover:underline">
-//                 Already have an account?
+//               <Link
+//                 to="/login"
+//                 className="inline-block text-sm text-blue-600 hover:underline"
+//               >
+//                 Already have an account? Log in
 //               </Link>
 //             </div>
 //           </div>
@@ -172,95 +204,97 @@
 
 // export default Signup;
 
-
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../axios';
-import React from 'react';
+import React, { useState } from 'react';
 import { Field, Form, Formik } from 'formik';
 import * as yup from 'yup';
 import FieldError from '../../components/FieldError';
 import toast from 'react-hot-toast';
 import Header from '../../components/Header';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 function Signup() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState('');
+
+  const getPasswordStrength = (password) => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[@$!%*?&]/.test(password)) score++;
+
+    if (score <= 2) return 'Weak';
+    if (score === 3 || score === 4) return 'Moderate';
+    return 'Strong';
+  };
 
   const validationSchema = yup.object({
-    name: yup.string().required('This Field is required'),
-    email: yup
-      .string()
-      .required('This Field is required')
-      .email('Invalid email'),
-    mobile_no: yup
-      .string()
-      .required('Phone number is required')
-      .matches(/^[9]\d{9}$/, 'Invalid phone number'),
+    name: yup.string().required('This field is required'),
+    email: yup.string().required('This field is required').email('Invalid email format'),
+    mobile_no: yup.string().required('Phone number is required').matches(/^[9]\d{9}$/, 'Invalid phone number'),
     password: yup
       .string()
       .required('Password is required')
-      .min(5, 'Your password is too short.')
-      .matches(/[a-zA-Z]/, 'Password can only contain Latin letters.'),
+      .min(8, 'Minimum 8 characters')
+      .matches(/[A-Z]/, 'At least one uppercase letter')
+      .matches(/[a-z]/, 'At least one lowercase letter')
+      .matches(/[0-9]/, 'At least one number')
+      .matches(/[@$!%*?&]/, 'At least one special character'),
     confirmpassword: yup
       .string()
-      .required('Confirm Your Password')
+      .required('Please confirm your password')
       .oneOf([yup.ref('password')], 'Passwords must match'),
   });
 
-  const handleFormSubmit = async (values) => {
+  const handleFormSubmit = async (values, { resetForm }) => {
     try {
-      const data = { ...values };
-      // Remove the confirm password before sending to server
-      delete data.confirmpassword;
+      const data = {
+        name: values.name.trim(),
+        email: values.email.trim(),
+        mobile_no: values.mobile_no.trim(),
+        password: values.password,
+      };
+
       const response = await axios.post('/users/register', data);
+
       if (response.data.success) {
-        toast.success('Registration Successful');
-        setTimeout(() => navigate('/login'), 100);
+        toast.success('Registration successful. OTP sent to email.');
+        resetForm();
+        navigate('/verify-otp', { state: { email: data.email } });
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error(error.response?.data?.msg || 'Something went wrong');
+      console.error('Signup error:', error);
+      toast.error(error.response?.data?.msg || 'Registration failed');
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header at the top */}
       <Header />
-
-      {/* Main content area: left image + right form */}
       <div className="flex flex-grow">
-        {/* Left side with image (hidden on small screens) */}
         <div
           className="hidden lg:block w-1/2 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1606660265514-358ebbadc80d?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1575&q=80')",
-          }}
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1606660265514-358ebbadc80d?auto=format&fit=crop&w=1575&q=80')" }}
         />
-
-        {/* Right side with signup form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center bg-white dark:bg-gray-800 px-6 py-10">
           <div className="w-full max-w-md">
-            {/* Logo */}
-            <div className="flex justify-center">
-             <img className="w-auto h-20" src="logo.png" alt="Logo" />
-
+            <div className="flex justify-center mb-4">
+              <img className="w-auto h-20" src="logo.png" alt="Logo" />
             </div>
-
-            {/* Sign In / Sign Up Tabs */}
-            <div className="flex items-center justify-center mt-6">
-              <Link
-                to="/login"
-                className="w-1/3 pb-4 text-center text-gray-500 border-b"
-              >
+            <div className="flex items-center justify-center">
+              <Link to="/login" className="w-1/3 pb-4 text-center text-gray-500 border-b">
                 Sign In
               </Link>
-              <span className="w-1/3 pb-4 text-center text-gray-800 dark:text-gray-200 border-b-2 border-blue-500">
+              <span className="w-1/3 pb-4 text-center text-gray-800 border-b-2 border-blue-500">
                 Sign Up
               </span>
             </div>
 
-            {/* Formik Form */}
             <Formik
               initialValues={{
                 name: '',
@@ -272,63 +306,69 @@ function Signup() {
               validationSchema={validationSchema}
               onSubmit={handleFormSubmit}
             >
-              {({ touched, errors }) => (
+              {({ touched, errors, values, setFieldValue }) => (
                 <Form className="mt-6 space-y-4">
                   <div>
-                    <Field
-                      name="name"
-                      type="text"
-                      placeholder="Your Name"
-                      className="w-full px-4 py-3 border rounded-lg"
-                    />
+                    <Field name="name" type="text" placeholder="Your Name" className="w-full px-4 py-3 border rounded-lg" />
                     <FieldError message={touched.name && errors.name} />
                   </div>
-
                   <div>
-                    <Field
-                      name="mobile_no"
-                      type="text"
-                      placeholder="Your Contact Number"
-                      className="w-full px-4 py-3 border rounded-lg"
-                    />
+                    <Field name="mobile_no" type="text" placeholder="Your Contact Number" className="w-full px-4 py-3 border rounded-lg" />
                     <FieldError message={touched.mobile_no && errors.mobile_no} />
                   </div>
-
                   <div>
-                    <Field
-                      name="email"
-                      type="email"
-                      placeholder="Your Email"
-                      className="w-full px-4 py-3 border rounded-lg"
-                    />
+                    <Field name="email" type="email" placeholder="Your Email" className="w-full px-4 py-3 border rounded-lg" />
                     <FieldError message={touched.email && errors.email} />
                   </div>
-
-                  <div>
+                  {/* Password field with strength */}
+                  <div className="relative">
                     <Field
                       name="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="Password"
-                      className="w-full px-4 py-3 border rounded-lg"
+                      className="w-full px-4 py-3 border rounded-lg pr-12"
+                      onChange={(e) => {
+                        setFieldValue('password', e.target.value);
+                        setPasswordStrength(getPasswordStrength(e.target.value));
+                      }}
                     />
+                    <div
+                      className="absolute top-1/2 right-3 transform -translate-y-1/2 cursor-pointer"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <FiEyeOff /> : <FiEye />}
+                    </div>
                     <FieldError message={touched.password && errors.password} />
+                    {values.password && (
+                      <p className={`text-sm mt-1 ${passwordStrength === 'Strong'
+                        ? 'text-green-600'
+                        : passwordStrength === 'Moderate'
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                        }`}>
+                        Strength: {passwordStrength}
+                      </p>
+                    )}
                   </div>
-
-                  <div>
+                  {/* Confirm Password field */}
+                  <div className="relative">
                     <Field
                       name="confirmpassword"
-                      type="password"
+                      type={showConfirm ? 'text' : 'password'}
                       placeholder="Confirm Password"
-                      className="w-full px-4 py-3 border rounded-lg"
+                      className="w-full px-4 py-3 border rounded-lg pr-12"
                     />
-                    <FieldError
-                      message={touched.confirmpassword && errors.confirmpassword}
-                    />
+                    <div
+                      className="absolute top-1/2 right-3 transform -translate-y-1/2 cursor-pointer"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                    >
+                      {showConfirm ? <FiEyeOff /> : <FiEye />}
+                    </div>
+                    <FieldError message={touched.confirmpassword && errors.confirmpassword} />
                   </div>
-
                   <button
                     type="submit"
-                    className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring focus:ring-gray-300 focus:ring-opacity-50"
+                    className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize bg-gray-800 rounded-lg hover:bg-gray-700"
                   >
                     Sign Up
                   </button>
@@ -336,10 +376,9 @@ function Signup() {
               )}
             </Formik>
 
-            {/* Already have an account? */}
             <div className="mt-6 text-center">
-              <Link to="/login" className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring focus:ring-gray-300 focus:ring-opacity-50 hover :underline">
-                Already have an account?
+              <Link to="/login" className="inline-block text-sm text-blue-600 hover:underline">
+                Already have an account? Log in
               </Link>
             </div>
           </div>

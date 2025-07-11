@@ -26,6 +26,8 @@ import AdminContact from './pages/adminPages/Contact/AdminContact';
 import Property from './pages/adminPages/Product/Property';
 import ResetPasswordRequest from "./pages/ResetPassword/ ResetPasswordRequest";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
+import VerifyOtp from './pages/signup/VerifyOtp';
+
 
 function App() {
 
@@ -50,6 +52,8 @@ function App() {
 
               <Route path="/forgot-password" element={<ResetPasswordRequest />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-otp" element={<VerifyOtp />} />
+              
             
 
 
