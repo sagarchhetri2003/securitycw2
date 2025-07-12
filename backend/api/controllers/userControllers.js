@@ -257,64 +257,6 @@ const login = async (req, res) => {
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: err.message });
   }
 };
-
-
-// Login
-// const login = async (req, res) => {
-//   try {
-//     const { error } = loginValidationSchema.validate(req.body);
-//     if (error) return res.status(httpStatus.BAD_REQUEST).json({ success: false, msg: error.message });
-
-//     const { email, password, captchaToken } = req.body;
-
-//     // ✅ CAPTCHA check
-//     const isCaptchaValid = await verifyCaptcha(captchaToken);
-//     if (!isCaptchaValid) {
-//       return res.status(403).json({ success: false, msg: "CAPTCHA verification failed. Please try again." });
-//     }
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "User Not Registered!!" });
-
-//     if (!user.isVerified) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Please verify your email." });
-
-
-//     // ✅ Password expiry check
-//     const thirtyDays = 1000 * 60 * 60 * 24 * 30;
-//     const passwordExpired = Date.now() - new Date(user.passwordChangedAt).getTime() > thirtyDays;
-
-//     if (passwordExpired) {
-//       const resetToken = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-//       const resetLink = `${process.env.CLIENT_URL || "http://localhost:3001"}/reset-password?token=${resetToken}`;
-
-//       const transporter = nodemailer.createTransport({
-//         service: "gmail",
-//         auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-//       });
-
-//       await transporter.sendMail({
-//         from: process.env.EMAIL_USER,
-//         to: user.email,
-//         subject: "Password Expired - Reset Required",
-//         html: passwordExpiredEmail(user, resetLink)
-//       });
-
-//       return res.status(403).json({ success: false, msg: "Password expired. Reset link sent to your email." });
-//     }
-  
-//       const token = jwt.sign(
-//         { userId: user._id, role: user.role }, // <-- include role
-//         process.env.JWT_SECRET,
-//         { expiresIn: "7d" }
-//       );
-  
-//       const { password: _, otp, otpExpiry, __v, ...data } = user.toObject();
-//       await createCart(user);
-  
-//       res.status(httpStatus.OK).json({ success: true, msg: "Login Success!!", data: { ...data, token } });
-//       } catch (err) {
-//         res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: err.message });
-//       }
-//     }; // <-- Closing brace for login function added
   
       // All users (with pagination and search)
       const allUser = async (req, res) => {
