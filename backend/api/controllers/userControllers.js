@@ -194,7 +194,10 @@ const login = async (req, res) => {
     if (!user) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "User Not Registered!!" });
 
     // ✅ Step 4: Check if email is verified
-    if (!user.isVerified) return res.status(httpStatus.UNAUTHORIZED).json({ success: false, msg: "Please verify your email." });
+    if (user.role !== "super-admin" && !user.isVerified) {
+      return res.status(401).json({ msg: "Please verify your email" });
+    }
+    
 
     // ✅ Step 5: Check for password expiry (e.g., 30 days)
     const thirtyDays = 1000 * 60 * 60 * 24 * 30;
