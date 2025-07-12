@@ -10,6 +10,7 @@ import useDarkTheme from '../hooks/useDarkTheme';
 import Switcher from './Switcher';
 
 
+
 const Header = () => {
     const authUser = useContext(AuthContext);
     const navigate = useNavigate();

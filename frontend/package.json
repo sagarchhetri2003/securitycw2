@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "secureBuild": "GENERATE_SOURCEMAP=false react-scripts build",
+    "secureDeploy": "NODE_ENV=production serve -s build --listen 3000 --ssl-cert ./ssl/localhost.pem --ssl-key ./ssl/localhost-key.pem",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --port 3001"
   },
@@ -43,6 +45,8 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "postcss": "^8.4.35",
+    "react-scripts": "^5.0.1",
+    "serve": "^14.2.4",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.0"
   }
