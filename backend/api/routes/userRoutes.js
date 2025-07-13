@@ -6,8 +6,7 @@ const userController = require('../controllers/userControllers');
 const { verifyUser, verifyAuthorization } = require("../middlewares/authMiddlerware");
 const { verifyOtp } = require('../controllers/userControllers');
 const { logout } = require('../controllers/userControllers');
-
-
+const upload = require('../middlewares/uploads'); 
 router.post("/login", userController.loginLimiter, userController.login)
 router.post(
     '/register',
@@ -41,7 +40,8 @@ router.get('/my-profile', verifyUser, userController.myProfile)
 
 router.put('/update-profile/:id', verifyUser, userController.updateProfile)
 
-router.put('/upload-pp', verifyUser, userController.uploadPP)
+router.put('/upload-pp', verifyUser, upload.single('profileImage'), userController.uploadPP)
+
 
 router.put('/change-password', verifyUser, userController.changePassword)
 router.post("/reset-password-request", userController.resetPasswordRequest)

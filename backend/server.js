@@ -17,8 +17,9 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const fs = require("fs"); //  File system for log dir
+
 const morgan = require("morgan"); //  HTTP request logger
-const rfs = require("rotating-file-stream"); // 🔁 For rotating logs
+const rfs = require("rotating-file-stream"); // For rotating logs
 
 const logger = require("./api/utils/logger");  //  Winston audit logger
 const User = require("./api/models/User");
@@ -28,7 +29,7 @@ const app = express();
 //  Apply Helmet for basic security headers
 app.use(helmet());
 
-// 🔒 Additional custom headers
+//  Additional custom headers
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -38,7 +39,7 @@ app.use((req, res, next) => {
 
 // Setup allowed origins
 // const allowedOrigins = process.env.URL?.split(",").map(origin => origin.trim());
-const allowedOrigins = process.env.CLIENT_URL?.split(",").map(origin => origin.trim()); // ✅ Updated: Use CLIENT_URL from .env
+const allowedOrigins = process.env.CLIENT_URL?.split(",").map(origin => origin.trim()); //  Updated: Use CLIENT_URL from .env
 
 console.log(" Allowed origins from .env:", allowedOrigins);
 

@@ -427,18 +427,30 @@ await user.save(); //
 
   // Upload profile picture
   const uploadPP = async (req, res) => {
-    upload.single('image')(req, res, async error => {
-      if (error) {
-        return res.status(httpStatus.BAD_REQUEST).json({ success: false, msg: error.message });
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, msg: "No file uploaded or invalid format" });
       }
-      try {
-        await User.findByIdAndUpdate(req.user._id, { image: req.file?.path || '' });
-        res.status(httpStatus.OK).json({ success: true, msg: "Profile Image Updated!!", data: { image: req.file?.path || '' } });
-      } catch (err) {
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ success: false, msg: "Something Went Wrong!!" });
-      }
+  
+      await User.findByIdAndUpdate(req.user._id, {
+        image: req.file.path,
       });
-  } ;
+  
+      res.status(200).json({
+        success: true,
+        msg: "Profile Image Updated!!",
+        data: { image: req.file.path },
+      });
+  
+    } catch (err) {
+      res.status(500).json({
+        success: false,
+        msg: "Something Went Wrong!!",
+        error: err.message,
+      });
+    }
+  };
+  
   
 
   // Reset password request

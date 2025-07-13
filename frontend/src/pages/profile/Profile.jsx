@@ -272,7 +272,14 @@ function Profile() {
                             className="w-32 h-32 border-4 border-white dark:border-gray-600 rounded-full object-cover"
                             alt="Profile"
                         />
-                        <input ref={uploadRef} type="file" className="hidden" onChange={(e) => uploadProfilePicture(e.target.files[0])} />
+                        <input
+  ref={uploadRef}
+  type="file"
+  accept="image/*" //  restricts to image types
+  className="hidden"
+  onChange={(e) => uploadProfilePicture(e.target.files[0])}
+/>
+
                         <button
                             onClick={() => uploadRef.current.click()}
                             className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition"

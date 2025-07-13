@@ -125,7 +125,7 @@ function EditProfile({ modalIsOpen, closeModal, getRoute, profileDetails }) {
                             <div className="col-span-full text-right mt-2">
                                 <button
                                     type="button"
-                                    onClick={() => navigate("/forgot-password")} // ✅ Navigates to forgot password page
+                                    onClick={() => navigate("/forgot-password")} //  Navigates to forgot password page
                                     className="text-sm text-blue-500 hover:underline"
                                 >
                                     Forgot Password?
