@@ -279,3 +279,4 @@
 {"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-12T23:09:41.970Z","timestamp":"2025-07-13 04:54:41"}
 {"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-12T23:13:56.001Z","timestamp":"2025-07-13 04:58:56"}
 {"email":"sagarcantretri@gmail.com","ip":"::1","level":"info","message":"User logged in","time":"2025-07-12T23:14:41.848Z","timestamp":"2025-07-13 04:59:41","userId":"6872c803bd1d4efe82d71484"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-13T06:50:04.241Z","timestamp":"2025-07-13 12:35:04"}
