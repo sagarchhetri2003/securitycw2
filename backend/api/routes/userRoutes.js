@@ -1,3 +1,5 @@
+const { check } = require("express-validator");
+
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userControllers');
@@ -7,7 +9,29 @@ const { logout } = require('../controllers/userControllers');
 
 
 router.post("/login", userController.loginLimiter, userController.login)
-router.post('/register', userController.register)
+router.post(
+    '/register',
+    [
+      check("name")
+        .trim()
+        .escape()
+        .notEmpty()
+        .withMessage("Name is required"),
+      check("email")
+        .isEmail()
+        .normalizeEmail()
+        .withMessage("Invalid email"),
+      check("password")
+        .isLength({ min: 8 })
+        .withMessage("Password must be at least 8 characters"),
+      check("mobile_no")
+        .isMobilePhone()
+        .withMessage("Invalid mobile number"),
+    ],
+    userController.register
+  );
+  
+  
 router.post('/verify-otp', verifyOtp);
 router.post('/logout', logout);
 

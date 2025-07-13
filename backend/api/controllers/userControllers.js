@@ -15,6 +15,8 @@ const WelcomeEmail = require("../templates/welcomeemail");
 const ResetPasswordEmail = require("../templates/resetpasswordemail");
 const { passwordExpiredEmail, accountLockedEmail } = require("../templates/securityAlerts");
 const logger =require("../utils/logger") // ✅ Winston Audit Logger
+const { validationResult } = require("express-validator");//input sanitization
+
 require("dotenv").config();
 
 const loginLimiter = rateLimit({
@@ -77,9 +79,9 @@ const loginLimiter = rateLimit({
 
 // Validation schemas
 const userValidationSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
+  name: Joi.string().trim().max(100),
+  email: Joi.string().email().trim().lowercase(),
+  password: Joi.string().min(8).required(),
   mobile_no: Joi.string().required(),
 });
 
@@ -105,6 +107,13 @@ const createCart = async (user) => {
 // Register with OTP
 const register = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array(),
+      });
+    }
     const { error } = userValidationSchema.validate(req.body);
     if (error)
       return res
