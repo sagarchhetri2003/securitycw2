@@ -205,7 +205,9 @@
 // export default Signup;
 
 import { Link, useNavigate } from 'react-router-dom';
-import axios from '../../axios';
+// import axios from '../../axios';
+import api from '../../axios'; //  uses your secure axios instance
+
 import React, { useState } from 'react';
 import { Field, Form, Formik } from 'formik';
 import * as yup from 'yup';
@@ -259,25 +261,46 @@ const validationSchema = yup.object({
 });
 
 
+  // const handleFormSubmit = async (values, { resetForm }) => {
+  //   try {
+  //     const data = {
+  //       name: values.name.trim(),
+  //       email: values.email.trim(),
+  //       mobile_no: values.mobile_no.trim(),
+  //       password: values.password,
+  //     };
+
+  //     const response = await axios.post('/users/register', data);
+
+  //     if (response.data.success) {
+  //       toast.success('Registration successful. OTP sent to email.');
+  //       resetForm();
+  //       navigate('/verify-otp', { state: { email: data.email } });
+  //     }
+  //   } catch (error) {
+  //     console.error('Signup error:', error);
+  //     toast.error(error.response?.data?.msg || 'Registration failed');
+  //   }
+  // };
   const handleFormSubmit = async (values, { resetForm }) => {
+    const data = {
+      name: values.name.trim(),
+      email: values.email.trim(),
+      mobile_no: values.mobile_no.trim(),
+      password: values.password,
+    };
+  
     try {
-      const data = {
-        name: values.name.trim(),
-        email: values.email.trim(),
-        mobile_no: values.mobile_no.trim(),
-        password: values.password,
-      };
-
-      const response = await axios.post('/users/register', data);
-
+      const response = await api.post("/users/register", data);
+  
       if (response.data.success) {
-        toast.success('Registration successful. OTP sent to email.');
+        toast.success("Registration successful. OTP sent to email.");
         resetForm();
-        navigate('/verify-otp', { state: { email: data.email } });
+        navigate("/verify-otp", { state: { email: data.email } });
       }
     } catch (error) {
-      console.error('Signup error:', error);
-      toast.error(error.response?.data?.msg || 'Registration failed');
+      console.error("Signup error:", error);
+      toast.error(error.response?.data?.msg || "Registration failed");
     }
   };
 

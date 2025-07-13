@@ -1,31 +1,31 @@
 
-
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require('path');
 const http = require('http');
-const https = require('https'); // ✅ Added for HTTPS
+const https = require('https'); //  Added for HTTPS
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
+const cookieParser = require("cookie-parser");
+const csurf = require("csurf");
 
 const helmet = require("helmet");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const fs = require("fs"); // 📁 File system for log dir
-const morgan = require("morgan"); // 📥 HTTP request logger
+const fs = require("fs"); //  File system for log dir
+const morgan = require("morgan"); //  HTTP request logger
 const rfs = require("rotating-file-stream"); // 🔁 For rotating logs
 
-const logger = require("./api/utils/logger");  // 🔐 Winston audit logger
+const logger = require("./api/utils/logger");  //  Winston audit logger
 const User = require("./api/models/User");
 
 const app = express();
 
-// 🛡️ Apply Helmet for basic security headers
+//  Apply Helmet for basic security headers
 app.use(helmet());
 
 // 🔒 Additional custom headers
@@ -36,22 +36,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ Setup allowed origins
+// Setup allowed origins
 // const allowedOrigins = process.env.URL?.split(",").map(origin => origin.trim());
 const allowedOrigins = process.env.CLIENT_URL?.split(",").map(origin => origin.trim()); // ✅ Updated: Use CLIENT_URL from .env
 
-console.log("✅ Allowed origins from .env:", allowedOrigins);
+console.log(" Allowed origins from .env:", allowedOrigins);
 
-// 🌐 CORS Configuration
+//  CORS Configuration
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log("🌐 Incoming request origin:", origin);
+      console.log(" Incoming request origin:", origin);
 
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.error("❌ CORS blocked origin:", origin);
+        console.error(" CORS blocked origin:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -61,6 +61,16 @@ app.use(
 
 //  JSON parsing
 app.use(express.json());
+
+//  CSRF protection
+app.use(cookieParser()); // Required for csurf to access cookies
+app.use(csurf({ cookie: true }));
+
+//  Provide CSRF token to frontend
+app.get("/api/csrf-token", (req, res) => {
+  res.status(200).json({ csrfToken: req.csrfToken() });
+});
+
 
 //  Sanitize against NoSQL injection
 app.use(mongoSanitize());
@@ -92,22 +102,22 @@ app.use(
   })
 );
 
-// 📁 Create logs directory if it doesn’t exist
+//  Create logs directory if it doesn’t exist
 const logDirectory = path.join(__dirname, "logs");
 if (!fs.existsSync(logDirectory)) {
   fs.mkdirSync(logDirectory);
 }
 
-// 📥 Create a rotating write stream for HTTP logs (rotates daily)
+//  Create a rotating write stream for HTTP logs (rotates daily)
 const accessLogStream = rfs.createStream("access.log", {
   interval: "1d", // rotate daily
   path: logDirectory,
 });
 
-// 📝 Morgan HTTP logging middleware
+//  Morgan HTTP logging middleware
 app.use(morgan("combined", { stream: accessLogStream }));
 
-// 🛢️ MongoDB and SuperAdmin
+//  MongoDB and SuperAdmin
 async function connectionDB() {
   try {
     await mongoose.connect(
@@ -116,7 +126,7 @@ async function connectionDB() {
         : process.env.MONGO_DB_REMOTE
     );
 
-    console.log("✅ MongoDB connected successfully!");
+    console.log(" MongoDB connected successfully!");
 
     const superAdminExists = await User.exists({ role: "super-admin" });
 
@@ -129,10 +139,10 @@ async function connectionDB() {
       };
 
       await User.create(superAdminData);
-      console.log("👑 SuperAdmin created successfully!");
+      console.log(" SuperAdmin created successfully!");
     }
 
-    // 📘 Audit log: successful DB connection & super admin check
+    //  Audit log: successful DB connection & super admin check
     logger.info("MongoDB connected and SuperAdmin setup verified", {
       event: "DB_INIT",
       status: "success",
@@ -140,9 +150,9 @@ async function connectionDB() {
     });
 
   } catch (error) {
-    console.log("❌ Error connecting to MongoDB: " + error);
+    console.log(" Error connecting to MongoDB: " + error);
 
-    // 🔴 Audit log: DB connection failed
+    //  Audit log: DB connection failed
     logger.error("MongoDB connection failed", {
       event: "DB_INIT",
       error: error.message,
@@ -152,7 +162,7 @@ async function connectionDB() {
   }
 }
 
-// 🏁 Initialize and return server
+//  Initialize and return server
 module.exports.initializeApp = async () => {
   await connectionDB();
 
@@ -160,18 +170,29 @@ module.exports.initializeApp = async () => {
 
   app.use("/", require("./api/routes/index"));
 
-  // ✅ Setup HTTPS server using self-signed or real certificates
+  //  Setup HTTPS server using self-signed or real certificates
   const sslOptions = {
-    key: fs.readFileSync(path.join(__dirname, "certs", "key.pem")),      // 🔐 SSL private key
-    cert: fs.readFileSync(path.join(__dirname, "certs", "cert.pem")),    // 🔐 SSL certificate
+    key: fs.readFileSync(path.join(__dirname, "certs", "key.pem")),      //  SSL private key
+    cert: fs.readFileSync(path.join(__dirname, "certs", "cert.pem")),    //  SSL certificate
   };
   
 
-  // ✅ Return HTTPS server instance
+  //  Return HTTPS server instance
   const secureServer = https.createServer(sslOptions, app);
+
+  //  Graceful CSRF error handling
+app.use((err, req, res, next) => {
+  if (err.code === "EBADCSRFTOKEN") {
+    return res.status(403).json({ success: false, msg: "Invalid or missing CSRF token" });
+  }
+  next(err);
+});
+
+
+
   return secureServer;
 
-  // ❗ Optional: Setup HTTP fallback redirection to HTTPS
+  // Optional: Setup HTTP fallback redirection to HTTPS
   // const httpServer = http.createServer((req, res) => {
   //   res.writeHead(301, { Location: "https://" + req.headers.host + req.url });
   //   res.end();
