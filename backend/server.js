@@ -44,6 +44,8 @@ const allowedOrigins = process.env.CLIENT_URL?.split(",").map(origin => origin.t
 console.log(" Allowed origins from .env:", allowedOrigins);
 
 //  CORS Configuration
+
+
 app.use(
   cors({
     origin: function (origin, callback) {

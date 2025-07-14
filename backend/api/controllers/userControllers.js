@@ -31,7 +31,7 @@ const loginLimiter = rateLimit({
       const user = await User.findOne({ email });
 
       if (user) {
-        // ✅ Set lockUntil for 10 minutes and update loginAttempts
+        // Set lockUntil for 10 minutes and update loginAttempts
         user.loginAttempts = 3;
         user.lockUntil = new Date(Date.now() + 10 * 60 * 1000); // Lock for 10 minutes
         logger.warn("Account locked", {
@@ -43,7 +43,7 @@ const loginLimiter = rateLimit({
         //  Save user with updated lockUntil        
         await user.save();
 
-        // ✅ Send lock notification email
+        //  Send lock notification email
         const transporter = nodemailer.createTransport({
           service: "gmail",
           auth: {
@@ -272,7 +272,7 @@ const login = async (req, res) => {
         time: new Date(),
       });
 
-      // ❗ Prevent login if account is currently locked
+      //  Prevent login if account is currently locked
 if (user.lockUntil && user.lockUntil > Date.now()) {
   return res.status(403).json({
     success: false,
@@ -330,7 +330,7 @@ if (user.lockUntil && user.lockUntil > Date.now()) {
       return res
         .status(httpStatus.UNAUTHORIZED)
         .json({ success: false, msg: "Incorrect Password" });
-    // ✅ Reset loginAttempts & lockUntil after successful login
+    //  Reset loginAttempts & lockUntil after successful login
 user.loginAttempts = 0;
 user.lockUntil = undefined;
 await user.save(); // 
@@ -341,7 +341,7 @@ await user.save(); //
       }
 
       req.session.userId = user._id; //session creaating
-      console.log("🟢 Session created:", req.session.userId);
+      console.log(" Session created:", req.session.userId);
 
 
       const token = jwt.sign(
@@ -501,7 +501,7 @@ await user.save(); //
   
       if (!user) return res.status(404).json({ message: "User not found" });
   
-      // ✅ Step 1: Prevent reuse of last 2 passwords (using bcrypt)
+      //  Step 1: Prevent reuse of last 2 passwords (using bcrypt)
       for (let old of user.passwordHistory.slice(-2)) {
         if (await bcrypt.compare(newPassword, old)) {
           return res.status(400).json({
@@ -510,7 +510,7 @@ await user.save(); //
         }
       }
   
-      // ✅ Step 2: Levenshtein distance check against last plain password
+      //  Step 2: Levenshtein distance check against last plain password
       if (user.lastPlainPassword) {
         const distance = levenshtein.get(newPassword, user.lastPlainPassword);
         if (distance < 3) {
@@ -520,14 +520,14 @@ await user.save(); //
         }
       }
   
-      // ✅ Step 3: Hash the new password and update fields
+      //  Step 3: Hash the new password and update fields
       const hashed = await bcrypt.hash(newPassword, 10);
       user.password = hashed;
       user.passwordChangedAt = Date.now();
       user.passwordHistory.push(hashed);
       user.lastPlainPassword = newPassword; // For Levenshtein check
   
-      // ✅ Step 4: Keep only last 5 passwords in history
+      //  Step 4: Keep only last 5 passwords in history
       if (user.passwordHistory.length > 5) {
         user.passwordHistory = user.passwordHistory.slice(-5);
       }
@@ -559,7 +559,7 @@ const changePassword = async (req, res) => {
   try {
     const { oldpassword, newpassword } = req.body;
 
-    // ✅ Fetch user
+    //  Fetch user
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
@@ -569,32 +569,31 @@ const changePassword = async (req, res) => {
       return res.status(401).json({ msg: "Invalid old password" });
     }
 
-    // ✅ Check if new password is in last 2 password history
+    //  Check if new password is in last 2 password history
     for (let oldHash of user.passwordHistory.slice(-2)) {
       if (await bcrypt.compare(newpassword, oldHash)) {
         return res.status(400).json({ msg: "You can't reuse your last 2 passwords" });
       }
     }
 
-    // ✅ Levenshtein distance check with old password
+    //  Levenshtein distance check with old password
     const distance = levenshtein.get(newpassword, oldpassword);
     if (distance < 3) {
       return res.status(400).json({ msg: "New password is too similar to the old password" });
     }
-
-    // ✅ Hash and store new password
+    //  Hash and store new password
     const hashed = await bcrypt.hash(newpassword, 10);
     user.password = hashed;
     user.passwordChangedAt = Date.now();
     user.passwordHistory.push(hashed);
     user.lastPlainPassword = newpassword; // Store plaintext for Levenshtein use
 
-    // ✅ Keep only last 5 passwords
+    //  Keep only last 5 passwords
     if (user.passwordHistory.length > 5) {
       user.passwordHistory = user.passwordHistory.slice(-5);
     }
 
-    // ✅ Add audit log
+    //  Add audit log
     logger.info("Password changed", {
       userId: req.user._id,
       ip: req.ip,
@@ -626,12 +625,12 @@ const changePassword = async (req, res) => {
   // const logout = (req, res) => {
   //   req.session.destroy((err) => {
   //     if (err) {
-  //       console.error("❌ Session destroy error:", err);
+  //       console.error(" Session destroy error:", err);
   //       return res.status(500).json({ success: false, msg: "Logout failed" });
   //     }
   
   //     console.log("🧼 Session destroyed. Clearing cookie...");
-  //     // ✅ Clear session cookie
+  //     // Clear session cookie
   //     res.clearCookie("connect.sid", {
   //       path: "/",             // must match cookie path
   //       httpOnly: true,        // match cookie settings
@@ -648,9 +647,9 @@ const changePassword = async (req, res) => {
 const logout = (req, res) => {
 req.session.destroy((err) => {
   if (err) {
-    console.error("❌ Session destroy error:", err);
+    console.error(" Session destroy error:", err);
 
-    // ⚠️ Log logout failure
+    //  Log logout failure
     logger.error("Logout failed", {
       userId: req?.session?.user?._id || "Unknown",
       reason: "Session destroy error",
@@ -661,8 +660,8 @@ req.session.destroy((err) => {
     return res.status(500).json({ success: false, msg: "Logout failed" });
   }
 
-  console.log("🧼 Session destroyed. Clearing cookie...");
-  // ✅ Clear session cookie
+  console.log(" Session destroyed. Clearing cookie...");
+  //  Clear session cookie
   res.clearCookie("connect.sid", {
     path: "/",             // must match cookie path
     httpOnly: true,        // match cookie settings
@@ -670,7 +669,7 @@ req.session.destroy((err) => {
     secure: process.env.NODE_ENV === "production" // or true if using HTTPS
   });
 
-  // ✅ Log successful logout
+  //  Log successful logout
   logger.info("User logged out", {
     userId: req?.session?.user?._id || "Unknown",
     ip: req.ip,
