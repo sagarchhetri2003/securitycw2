@@ -78,7 +78,7 @@ const propertyController = require("../controllers/propertyControllers");
 const { verifyUser, verifyAuthorization } = require("../middlewares/authMiddlerware");
 const router = require("express").Router();
 
-// 🔐 Only admin or super-admin can add, update, delete
+//  Only admin or super-admin can add, update, delete
 router.post('/add', verifyUser, verifyAuthorization('admin', 'super-admin'), propertyController.addProperty);
 
 router.get('/all', propertyController.getProperties);  // Public or accessible to all
