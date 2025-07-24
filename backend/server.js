@@ -14,6 +14,7 @@ const csurf = require("csurf");
 
 const helmet = require("helmet");
 const dotenv = require("dotenv");
+
 dotenv.config();
 
 const fs = require("fs"); //  File system for log dir
@@ -24,7 +25,22 @@ const rfs = require("rotating-file-stream"); // For rotating logs
 const logger = require("./api/utils/logger");  //  Winston audit logger
 const User = require("./api/models/User");
 
+
 const app = express();
+//  Apply DoS protection first (limit to 10KB)
+
+
+app.use(express.json({ limit: '10kb' })); // 10KB limit
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+app.post("/test-payload", (req, res) => {
+  res.json({
+    message: "Payload accepted",
+    length: JSON.stringify(req.body).length,
+  });
+});
+
+
 
 //  Apply Helmet for basic security headers
 app.use(helmet());
