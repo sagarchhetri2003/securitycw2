@@ -1,51 +1,6 @@
 
 
 
-// import { useLocation, useNavigate } from 'react-router-dom';
-// import { useState } from 'react';
-// import axios from 'axios';
-// import { toast } from 'react-toastify';
-
-// const VerifyOtp = () => {
-//   const location = useLocation();
-//   const navigate = useNavigate();
-//   const email = location.state?.email || '';
-//   const [otp, setOtp] = useState('');
-
-//   const handleOtpSubmit = async () => {
-//     try {
-//       const response = await axios.post('/users/verify-otp', {
-//         email,
-//         otp
-//       });
-
-//       if (response.data.success) {
-//         toast.success('OTP verified successfully!');
-//         navigate('/login'); // ✅ Redirect to login
-//       }
-//     } catch (error) {
-//       console.error('OTP verification error:', error);
-//       toast.error(error.response?.data?.msg || 'OTP verification failed');
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <h2>Verify Your Email</h2>
-//       <input
-//         type="text"
-//         placeholder="Enter OTP"
-//         value={otp}
-//         onChange={(e) => setOtp(e.target.value)}
-//       />
-//       <button onClick={handleOtpSubmit}>Verify OTP</button>
-//     </div>
-//   );
-// };
-
-// export default VerifyOtp;
-
-
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "../../axios";
