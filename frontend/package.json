@@ -12,6 +12,7 @@
     "preview": "vite preview --port 3001"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2",
     "axios": "^1.6.7",
     "chart.js": "^4.4.8",
     "formik": "^2.4.5",
