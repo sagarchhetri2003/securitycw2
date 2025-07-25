@@ -503,3 +503,27 @@
 {"email":"sagarkshetri0000@gmail.com","ip":"::1","level":"info","message":"User logged in","time":"2025-07-24T17:15:54.256Z","timestamp":"2025-07-24 23:00:54","userId":"687286eb2900e8b153fdcfcc"}
 {"ip":"::1","level":"info","message":"User logged out","time":"2025-07-24T17:20:48.774Z","timestamp":"2025-07-24 23:05:48","userId":"Unknown"}
 {"email":"sagarkshetri0000@gmail.com","ip":"::1","level":"info","message":"User logged in","time":"2025-07-24T17:21:17.044Z","timestamp":"2025-07-24 23:06:17","userId":"687286eb2900e8b153fdcfcc"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:35:36.782Z","timestamp":"2025-07-25 12:20:36"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:35:41.039Z","timestamp":"2025-07-25 12:20:41"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:36:10.768Z","timestamp":"2025-07-25 12:21:10"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:38:26.247Z","timestamp":"2025-07-25 12:23:26"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:38:29.051Z","timestamp":"2025-07-25 12:23:29"}
+{"ip":"::1","level":"info","message":"User logged out","time":"2025-07-25T06:40:48.035Z","timestamp":"2025-07-25 12:25:48","userId":"Unknown"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:42:09.894Z","timestamp":"2025-07-25 12:27:09"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:42:13.579Z","timestamp":"2025-07-25 12:27:13"}
+{"email":"sagarkshetri0000@gmail.com","ip":"::1","level":"info","message":"User logged in","time":"2025-07-25T06:42:20.194Z","timestamp":"2025-07-25 12:27:20","userId":"687286eb2900e8b153fdcfcc"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:43:36.539Z","timestamp":"2025-07-25 12:28:36"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:45:26.545Z","timestamp":"2025-07-25 12:30:26"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:45:27.280Z","timestamp":"2025-07-25 12:30:27"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:47:50.422Z","timestamp":"2025-07-25 12:32:50"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:47:52.782Z","timestamp":"2025-07-25 12:32:52"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:47:58.595Z","timestamp":"2025-07-25 12:32:58"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:49:45.891Z","timestamp":"2025-07-25 12:34:45"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:49:50.667Z","timestamp":"2025-07-25 12:34:50"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:51:00.688Z","timestamp":"2025-07-25 12:36:00"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:51:11.435Z","timestamp":"2025-07-25 12:36:11"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:51:12.710Z","timestamp":"2025-07-25 12:36:12"}
+{"event":"DB_INIT","level":"info","message":"MongoDB connected and SuperAdmin setup verified","status":"success","time":"2025-07-25T06:51:21.262Z","timestamp":"2025-07-25 12:36:21"}
+{"ip":"::1","level":"info","message":"User logged out","time":"2025-07-25T06:52:58.396Z","timestamp":"2025-07-25 12:37:58","userId":"Unknown"}
+{"email":"sagarkshetri0000@gmail.com","fingerprint":"28d00dc42c44dbdf3d5bfae51151fc49","ip":"::1","level":"info","message":"New fingerprint added","time":"2025-07-25T06:53:18.799Z","timestamp":"2025-07-25 12:38:18","userAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15","userId":"687286eb2900e8b153fdcfcc"}
+{"email":"sagarkshetri0000@gmail.com","ip":"::1","level":"info","message":"User logged in","time":"2025-07-25T06:53:18.804Z","timestamp":"2025-07-25 12:38:18","userId":"687286eb2900e8b153fdcfcc"}

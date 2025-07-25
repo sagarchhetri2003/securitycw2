@@ -14,7 +14,7 @@ const validatePassword = require("../utils/validatePassword");
 const WelcomeEmail = require("../templates/welcomeemail");
 const ResetPasswordEmail = require("../templates/resetpasswordemail");
 const { passwordExpiredEmail, accountLockedEmail } = require("../templates/securityAlerts");
-const logger =require("../utils/logger") // ✅ Winston Audit Logger
+const logger =require("../utils/logger") //  Winston Audit Logger
 const { validationResult } = require("express-validator");//input sanitization
 
 require("dotenv").config();
@@ -90,6 +90,7 @@ const loginValidationSchema = Joi.object({
   password: Joi.string().required(),
   captchaToken: Joi.string().required(),
   fingerprint: Joi.string().required(), 
+  userAgent: Joi.string().allow(''),
 });
 
 // Create cart function
@@ -255,7 +256,7 @@ const verifyCaptcha = async (token) => {
       }
     );
 
-    console.log("🔐 CAPTCHA response:", res.data); // ✅ Debug log
+    console.log(" CAPTCHA response:", res.data); //  Debug log
 
     return res.data.success;
   } catch (err) {
@@ -300,28 +301,30 @@ const login = async (req, res) => {
         time: new Date(),
       });
 
-//  Check if fingerprint is stored and matches
-if (user.fingerprint && user.fingerprint !== fingerprint) {
-  logger.warn("Unrecognized fingerprint - Possible device switch", {
-    event: "device_mismatch",
-    email,
-    ip: req.ip,
-    time: new Date(),
-    receivedFingerprint: fingerprint,
-    storedFingerprint: user.fingerprint,
-  });
 
-  return res.status(403).json({
-    success: false,
-    msg: "Unrecognized device/browser. Please verify.",
-  });
-}
 
-//  If fingerprint is not set yet, store it
-if (!user.fingerprint) {
-  user.fingerprint = fingerprint;
-  await user.save();
-}
+// //  Check if fingerprint is stored and matches
+// if (user.fingerprint && user.fingerprint !== fingerprint) {
+//   logger.warn("Unrecognized fingerprint - Possible device switch", {
+//     event: "device_mismatch",
+//     email,
+//     ip: req.ip,
+//     time: new Date(),
+//     receivedFingerprint: fingerprint,
+//     storedFingerprint: user.fingerprint,
+//   });
+
+//   return res.status(403).json({
+//     success: false,
+//     msg: "Unrecognized device/browser. Please verify.",
+//   });
+// }
+
+// //  If fingerprint is not set yet, store it
+// if (!user.fingerprint) {
+//   user.fingerprint = fingerprint;
+//   await user.save();
+// }
 
       //  Prevent login if account is currently locked
 if (user.lockUntil && user.lockUntil > Date.now()) {
@@ -381,6 +384,29 @@ if (user.lockUntil && user.lockUntil > Date.now()) {
       return res
         .status(httpStatus.UNAUTHORIZED)
         .json({ success: false, msg: "Incorrect Password" });
+
+        //  Ensure fingerprint array exists
+user.fingerprints = user.fingerprints || [];
+
+//  Check if fingerprint already exists
+const isKnownDevice = user.fingerprints.some(fp => fp.id === fingerprint);
+
+if (!isKnownDevice) {
+  user.fingerprints.push({
+    id: fingerprint,
+    userAgent: req.get("User-Agent") || "Unknown",
+    addedAt: new Date(),
+  });
+
+  logger.info("New fingerprint added", {
+    userId: user._id,
+    email,
+    fingerprint,
+    userAgent: req.get("User-Agent") || "Unknown",
+    ip: req.ip,
+    time: new Date(),
+  });
+}
     //  Reset loginAttempts & lockUntil after successful login
 user.loginAttempts = 0;
 user.lockUntil = undefined;

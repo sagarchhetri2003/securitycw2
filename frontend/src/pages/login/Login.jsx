@@ -70,6 +70,7 @@ async function fetchCsrfToken() {
           ...values,
           captchaToken,
           fingerprint: visitorId,
+          userAgent: navigator.userAgent,
         },
         {
           headers: {
