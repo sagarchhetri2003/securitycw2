@@ -94,7 +94,7 @@ const Header = () => {
     const logout = async () => {
         try {
           // 🔒 Backend logout
-          await axios.post("http://localhost:8000/users/logout", {}, {
+          await axios.post("https://localhost:8000/users/logout", {}, {
             withCredentials: true,
           });
       

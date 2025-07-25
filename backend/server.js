@@ -27,10 +27,12 @@ const User = require("./api/models/User");
 
 
 const app = express();
+
+app.use(morgan("dev"));
 //  Apply DoS protection first (limit to 10KB)
 
 
-app.use(express.json({ limit: '10kb' })); // 10KB limit
+app.use(express.json()); // 10KB limit
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 app.post("/test-payload", (req, res) => {
@@ -83,11 +85,19 @@ app.use(express.json());
 
 //  CSRF protection
 app.use(cookieParser()); // Required for csurf to access cookies
+app.use(express.json());// If you're parsing JSON bodies
 app.use(csurf({ cookie: true }));
 
 //  Provide CSRF token to frontend
 app.get("/api/csrf-token", (req, res) => {
   res.status(200).json({ csrfToken: req.csrfToken() });
+});
+//  Handle CSRF token errors
+app.use((err, req, res, next) => {
+  if (err.code === "EBADCSRFTOKEN") {
+    return res.status(403).json({ success: false, msg: "Invalid CSRF token" });
+  }
+  next(err);
 });
 
 
@@ -115,7 +125,7 @@ app.use(
     cookie: {
       httpOnly: true,// 	Cookie cannot be accessed via JavaScript,	Prevents XSS
       secure: process.env.NODE_ENV === "production", //Only sent over HTTPS in production	Prevents theft over HTTP
-      sameSite: "Strict",  // Cookie only sent from same-origin requests	,Prevents CSRF
+      sameSite: "None",  // Cookie only sent from same-origin requests	,Prevents CSRF  sameSite: "Strict" blocks cookies in cross-origin POSTs (even from Postman), causing CSRF to fail.
       maxAge: 15 * 60 * 1000 // Session auto-expires in 15 mins	,Prevents long-living sessions
     }
   })
@@ -200,12 +210,12 @@ module.exports.initializeApp = async () => {
   const secureServer = https.createServer(sslOptions, app);
 
   //  Graceful CSRF error handling
-app.use((err, req, res, next) => {
-  if (err.code === "EBADCSRFTOKEN") {
-    return res.status(403).json({ success: false, msg: "Invalid or missing CSRF token" });
-  }
-  next(err);
-});
+// app.use((err, req, res, next) => {
+//   if (err.code === "EBADCSRFTOKEN") {
+//     return res.status(403).json({ success: false, msg: "Invalid or missing CSRF token" });
+//   }
+//   next(err);
+// });
 
 
 

@@ -89,6 +89,7 @@ const loginValidationSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
   captchaToken: Joi.string().required(),
+  fingerprint: Joi.string().required(), 
 });
 
 // Create cart function
@@ -231,12 +232,39 @@ const verifyOtp = async (req, res) => {
 };
 
 // Captcha verify
+// const verifyCaptcha = async (token) => {
+//   const secret = process.env.RECAPTCHA_SECRET_KEY;
+//   const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`;
+//   const res = await axios.post(url);
+//   return res.data.success;
+// };
+
+
 const verifyCaptcha = async (token) => {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`;
-  const res = await axios.post(url);
-  return res.data.success;
+  try {
+    const secret = process.env.RECAPTCHA_SECRET_KEY;
+
+    const res = await axios.post(
+      "https://www.google.com/recaptcha/api/siteverify",
+      null,
+      {
+        params: {
+          secret,
+          response: token,
+        },
+      }
+    );
+
+    console.log("🔐 CAPTCHA response:", res.data); // ✅ Debug log
+
+    return res.data.success;
+  } catch (err) {
+    console.error(" CAPTCHA verification error:", err.response?.data || err.message);
+    return false;
+  }
 };
+
+module.exports = verifyCaptcha;
 
 // Login
 const login = async (req, res) => {
@@ -247,7 +275,7 @@ const login = async (req, res) => {
         .status(httpStatus.BAD_REQUEST)
         .json({ success: false, msg: error.message });
 
-    const { email, password, captchaToken } = req.body;
+    const { email, password, captchaToken ,fingerprint} = req.body;
     const isCaptchaValid = await verifyCaptcha(captchaToken);
     if (!isCaptchaValid) {
       logger.warn("CAPTCHA failed", {
@@ -271,6 +299,29 @@ const login = async (req, res) => {
         ip: req.ip,
         time: new Date(),
       });
+
+//  Check if fingerprint is stored and matches
+if (user.fingerprint && user.fingerprint !== fingerprint) {
+  logger.warn("Unrecognized fingerprint - Possible device switch", {
+    event: "device_mismatch",
+    email,
+    ip: req.ip,
+    time: new Date(),
+    receivedFingerprint: fingerprint,
+    storedFingerprint: user.fingerprint,
+  });
+
+  return res.status(403).json({
+    success: false,
+    msg: "Unrecognized device/browser. Please verify.",
+  });
+}
+
+//  If fingerprint is not set yet, store it
+if (!user.fingerprint) {
+  user.fingerprint = fingerprint;
+  await user.save();
+}
 
       //  Prevent login if account is currently locked
 if (user.lockUntil && user.lockUntil > Date.now()) {

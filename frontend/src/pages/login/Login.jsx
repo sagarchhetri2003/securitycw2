@@ -1,6 +1,8 @@
 
 import { useNavigate } from "react-router-dom";
 import axios from "../../axios";
+// import axios from "axios";
+
 import React, { useContext, useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Field, Form, Formik } from "formik";
@@ -8,12 +10,45 @@ import toast from "react-hot-toast";
 import { AuthContext } from "../../context/authContext";
 import Header from "../../components/Header";
 import ReCAPTCHA from "react-google-recaptcha";
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
+
 
 function Login() {
   const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated, setUserDetails } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
+
+
+useEffect(() => {
+  // const fetchCsrfToken = async () => {
+  //   try {
+  //     const res = await axios.get("/api/csrf-token", { withCredentials: true });
+  //     console.log(res.data)
+  //     const csrfToken = res.data.csrfToken;
+  //     localStorage.setItem("csrfToken", csrfToken); // Save CSRF token
+  //   } catch (error) {
+  //     console.error(" CSRF Token Fetch Failed", error);
+  //   }
+  // };
+
+  fetchCsrfToken();
+}, []);
+
+async function fetchCsrfToken() {
+  try {
+    const response = await axios.get("api/csrf-token");
+    if (response.data) {
+      console.log("CSRF Token fetched:", response.data.csrfToken);
+      localStorage.setItem("csrfToken", response.data.csrfToken);
+    } else {
+      console.error("Failed to fetch CSRF Token");
+    }
+  } catch (error) {
+    console.log("Error fetching CSRF Token:", error);
+  }
+}
+
 
   //  Handle form submission
   const handleFormSubmit = async (values) => {
@@ -23,10 +58,27 @@ function Login() {
     }
   
     try {
-      const response = await axios.post("users/login", {
-        ...values,
-        captchaToken,
-      }, { withCredentials: true }); //  Important for session cookies
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      const visitorId = result.visitorId; // Unique browser fingerprint
+
+      const csrfToken = localStorage.getItem("csrfToken");
+      console.log(" Axios BaseURL:", axios.defaults.baseURL);
+      const response = await axios.post(
+        "users/login",
+        {
+          ...values,
+          captchaToken,
+          fingerprint: visitorId,
+        },
+        {
+          headers: {
+            "X-CSRF-Token": csrfToken, //  Include token here
+          },
+          withCredentials: true,
+        }
+      );
+       //  Important for session cookies
 
       console.log("Login response:", response);
   

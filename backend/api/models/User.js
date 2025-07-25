@@ -86,24 +86,30 @@ const userSchema = new Schema({
   otpExpiry: Date,
   isVerified: { type: Boolean, default: false },
 
-  // ✅ Password expiry enforcement
+  //  Password expiry enforcement
   passwordChangedAt: {
     type: Date,
     default: Date.now,
   },
 
-  // ✅ Password history for reuse prevention
+  //  Password history for reuse prevention
   passwordHistory: {
     type: [String],
     default: [],
   },
 
-  // ✅ Store last plain password (for Levenshtein similarity check)
+  //  Store last plain password (for Levenshtein similarity check)
   lastPlainPassword: {
     type: String,
   },
+//fingerprint: 
+  fingerprint: {
+    type: String,
+    default: null,
+  },
+  
 
-  // ✅ Brute-force protection
+  // Brute-force protection
   loginAttempts: {
     type: Number,
     default: 0,
@@ -115,7 +121,7 @@ const userSchema = new Schema({
   timestamps: true
 });
 
-// ✅ Password expiry method
+//  Password expiry method
 userSchema.methods.isPasswordExpired = function () {
   const MAX_AGE_DAYS = 30;
   const diffMs = Date.now() - new Date(this.passwordChangedAt).getTime();
